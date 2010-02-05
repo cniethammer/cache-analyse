@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "timer.h"
+#include "cycle.h"
 
 /* definitions and default values */
 
@@ -84,6 +85,25 @@ list_elem * init_sequential( long int size ){
 
 /*
  * allocates an array of 'list_elem'ents with at least size size Byte.
+ * The list elements are connected in an inverse sequential roud robing way.
+ */
+list_elem * init_inverse_sequential( long int size ){
+  long int i;
+  list_elem *wsetptr;
+
+  wsetptr = (list_elem *)  malloc( size + sizeof(list_elem ) );
+  if( wsetptr == NULL )
+    return NULL;
+
+  for( i = 1; i < size / sizeof(struct l); i++ )
+    wsetptr[i].next = &wsetptr[i-1];
+  wsetptr[0].next = &wsetptr[i-1]; // first element points to the last one
+  
+  return wsetptr;
+}
+
+/*
+ * allocates an array of 'list_elem'ents with at least size size Byte.
  * The list elements are connected in a random roud robing way.
  */
 list_elem * init_random( long int size ){
@@ -123,6 +143,7 @@ long int test_read( long int size, list_elem *wsetptr ) {
   double start, stop;
   list_elem *lptr;
   double exponent;
+  ticks ticks1, ticks2;
 
   if( wsetptr == NULL )
     return 0;
@@ -131,15 +152,22 @@ long int test_read( long int size, list_elem *wsetptr ) {
   clear_cache();
 
   start = timer();
+  ticks1 = getticks();
+
   /* Main loop acessing the data set */
   for( access_num = 0; access_num < num_accesses; access_num++ )
     lptr = lptr->next;
+
+  ticks2 = getticks();
   stop = timer();
 
+  long test = (long) lptr;
+  fprintf(stderr, "%ld\n", test );
   exponent = log((double) size) / log(2.);
-  fprintf( stdout, "%4.lf %10.ld %16.2lf\n",exponent , size, num_accesses / (stop - start) );
+  /* log2(size)  size  accesses/s  cyc/access */
+  fprintf( stdout, "%8.lf %8.ld %16.2lf %8.1lf\n",exponent , size, num_accesses / (stop - start), (double)(ticks2 - ticks1) / num_accesses );
       
-  return 0;
+  return ticks2 - ticks1;
 }
 
 int main( int argc, char* argv[] ){
@@ -151,6 +179,14 @@ int main( int argc, char* argv[] ){
   fprintf( stdout, "# sequentiall list\n" );
   for( size = wset_start_size; size <= wset_final_size; size *= 2 ) {
     wsetptr = init_sequential( size );
+    test_read( size, wsetptr );
+    free( wsetptr );
+  }
+  fprintf( stdout, "\n\n" );
+
+  fprintf( stdout, "# inverse sequentiall list\n" );
+  for( size = wset_start_size; size <= wset_final_size; size *= 2 ) {
+    wsetptr = init_inverse_sequential( size );
     test_read( size, wsetptr );
     free( wsetptr );
   }
