@@ -162,10 +162,10 @@ long int test_read( long int size, list_elem *wsetptr ) {
   stop = timer();
 
   long test = (long) lptr;
-  fprintf(stderr, "%ld\n", test );
+  fprintf(stderr, "%ld\r", test );
   exponent = log((double) size) / log(2.);
   /* log2(size)  size  accesses/s  cyc/access */
-  fprintf( stdout, "%8.lf %8.ld %16.2lf %8.1lf\n",exponent , size, num_accesses / (stop - start), (double)(ticks2 - ticks1) / num_accesses );
+  fprintf( stdout, "%4.lf %12.ld %16.2lf %8.1lf\n",exponent , size, num_accesses / (stop - start), (double)(ticks2 - ticks1) / num_accesses );
       
   return ticks2 - ticks1;
 }
