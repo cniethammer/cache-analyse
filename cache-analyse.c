@@ -12,6 +12,20 @@
 #include <math.h>
 #include "timer.h"
 #include "cycle.h"
+#ifdef PAPI
+#include <papi.h>
+#if 0
+const int num_hwcntrs = 2;
+int Events[4] = {PAPI_TOT_CYC,PAPI_TLB_TL,PAPI_L2_DCM,PAPI_L2_DCA};
+char * EventStrings[4] = {"PAPI_TOT_CYC", "PAPI_TLB_TL", "PAPI_L2_DCM", "PAPI_L2_DCA" };
+#endif
+#if 1
+const int num_hwcntrs = 3;
+int Events[3] = {PAPI_TOT_CYC,PAPI_L2_DCM,PAPI_L2_DCA};
+char * EventStrings[3] = {"PAPI_TOT_CYC", "PAPI_L2_DCM", "PAPI_L2_DCA" };
+#endif
+
+#endif
 
 /* definitions and default values */
 
@@ -43,6 +57,34 @@ typedef struct l {
 /***********************************************************************
  * function definitions
  ***********************************************************************/
+
+#ifdef PAPI
+int papi_error_handler (int retval) {
+	switch (retval) {
+		case PAPI_EINVAL: 
+		 	fprintf(stderr, "One or more of the arguments is invalid.\n");
+			break;
+		case PAPI_EISRUN : 
+		 	fprintf(stderr, "Counters have already been started, you must call PAPI_stop_counters() before you call this function again.\n");
+			break;
+		case PAPI_ESYS : 
+			fprintf(stderr, "A system or C library call failed inside PAPI, see the errno variable.\n");
+			break;
+		case PAPI_ENOMEM : 
+			fprintf(stderr, "Insufficient memory to complete the operation.\n");
+			break;
+		case PAPI_ECNFLCT : 
+			fprintf(stderr, "The underlying counter hardware cannot count this event and other events in the EventSet simultaneously.\n");
+			break;
+		case PAPI_ENOEVNT : 
+			fprintf(stderr, "The PAPI preset is not available on the underlying hardware.\n");
+			break;
+		default:
+			fprintf(stderr, "Unknown PAPI error (%d).\n", retval);
+		}
+	exit(1);
+}
+#endif
 
 /*
  * this function clears the CPU cache by accessing all elements of a large array.
@@ -154,9 +196,17 @@ long int test_read( long int size, list_elem *wsetptr ) {
   start = timer();
   ticks1 = getticks();
 
+#ifdef PAPI
+	long long values1[num_hwcntrs];
+	long long values2[num_hwcntrs];
+	PAPI_accum_counters	( values1, num_hwcntrs );
+#endif
   /* Main loop acessing the data set */
   for( access_num = 0; access_num < num_accesses; access_num++ )
     lptr = lptr->next;
+#ifdef PAPI
+	PAPI_accum_counters	( values1, num_hwcntrs );
+#endif
 
   ticks2 = getticks();
   stop = timer();
@@ -165,7 +215,16 @@ long int test_read( long int size, list_elem *wsetptr ) {
   fprintf(stderr, "%ld\r", test );
   exponent = log((double) size) / log(2.);
   /* log2(size)  size  accesses/s  cyc/access */
+#ifdef PAPI
+  fprintf( stdout, "%4.lf %12.ld %16.2lf %8.1lf",exponent , size, num_accesses / (stop - start), (double)(ticks2 - ticks1) / num_accesses );
+	int ii;
+	for( ii = 0; ii < num_hwcntrs; ii++) {
+		fprintf(stdout, "\t%lld", values1[ii] );
+	}
+  fprintf( stdout, "\n" );
+#else
   fprintf( stdout, "%4.lf %12.ld %16.2lf %8.1lf\n",exponent , size, num_accesses / (stop - start), (double)(ticks2 - ticks1) / num_accesses );
+#endif
       
   return ticks2 - ticks1;
 }
@@ -174,6 +233,33 @@ int main( int argc, char* argv[] ){
 
   long int size = 1;
   list_elem *wsetptr;
+
+#ifdef PAPI
+  int retval;
+
+  retval = PAPI_library_init(PAPI_VER_CURRENT);
+  if (retval != PAPI_VER_CURRENT) {
+	fprintf(stderr,"PAPI library init error!\n");
+	papi_error_handler(retval);
+	exit(1);
+  }	
+  retval = PAPI_start_counters(Events, num_hwcntrs);
+  if (retval < PAPI_OK) {
+	fprintf(stderr,"PAPI event initialization failed\n");
+	papi_error_handler(retval);
+	exit(1);
+  }
+
+#endif
+  fprintf(stdout,"# 10^n\tsize\taccess/sec\tticks/access" );
+#ifdef PAPI
+  int j;
+  for( j = 0; j < num_hwcntrs; j++ ) {
+	fprintf(stdout,"\t%s", EventStrings[j]);
+  }
+#endif
+  fprintf(stdout,"\n" );
+
   fprintf( stdout, "# Access padding: %ld\n#\n", NPAD * sizeof( long int ) );
 
   fprintf( stdout, "# sequentiall list\n" );
@@ -198,6 +284,15 @@ int main( int argc, char* argv[] ){
     test_read( size, wsetptr );
     free( wsetptr );
   }
+#ifdef PAPI
+  long long dummy[num_hwcntrs];
+  retval = PAPI_stop_counters(dummy, num_hwcntrs);
+  if (retval < PAPI_OK) {
+    fprintf(stderr,"PAPI event initialization failed\n");
+    papi_error_handler(retval);
+    exit(1);
+  }
+#endif
 
   return 0;
 }

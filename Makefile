@@ -1,8 +1,8 @@
 HEADER = $(shell find . -name "*.h")
 
 CC     = icc
-CFLAGS = -O2 -g
-LINKFLAGS = -O2 -lm -g
+CFLAGS = -O2 -g -DPAPI
+LINKFLAGS = -O2 -lm -lpapi -g
 
 ifndef NPAD
   NPAD = 7 
