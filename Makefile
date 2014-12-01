@@ -15,11 +15,13 @@ CFLAGS+= -DNPAD=$(NPAD)
 
 .PHONY: default clean cleanall
 
-
 default: run
 
-run: cache-analyse
+run: cache-analyse-$(NPAD)
 	./$<
+
+cache-analyse-$(NPAD): cleanall cache-analyse
+	cp cache-analyse cache-analyse-$(NPAD)
 
   
 
