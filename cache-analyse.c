@@ -51,7 +51,7 @@ long int wset_final_size = 1 << 29;	// 512 MB
 
 typedef struct l {
   struct l *next;
-  long int pad[NPAD];
+  char pad[NPAD];
 } list_elem;
 
 /***********************************************************************
@@ -260,7 +260,7 @@ int main( int argc, char* argv[] ){
 #endif
   fprintf(stdout,"\n" );
 
-  fprintf( stdout, "# Access padding: %ld\n#\n", NPAD * sizeof( long int ) );
+  fprintf( stdout, "# Access padding: %ld Bytes\n#\n", NPAD * sizeof(char) );
 
   fprintf( stdout, "# sequentiall list\n" );
   for( size = wset_start_size; size <= wset_final_size; size *= 2 ) {
