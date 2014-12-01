@@ -1,12 +1,17 @@
-HEADER = $(shell find . -name "*.h")
+CC     = gcc
+CFLAGS = -O2
+LDFLAGS = -O2 -lm
 
-CC     = icc
-CFLAGS = -O2 -g -DPAPI
-LINKFLAGS = -O2 -lm -lpapi -g
+ifdef PAPI
+  CFLAGS += " -DPAPI"
+  LDFLAGS += " -lpapi"
+endif
 
 ifndef NPAD
   NPAD = 7 
 endif
+
+CFLAGS+= -DNPAD=$(NPAD)
 
 .PHONY: default clean cleanall
 
@@ -16,12 +21,7 @@ default: run
 run: cache-analyse
 	./$<
 
-%.o: %.c $(HEADER)
-	$(CC) $(CFLAGS) -c $< -o $@ -DNPAD=$(NPAD)
   
-
-cache-analyse: cache-analyse.o
-	$(CC) $(LINKFLAGS) -o $@ $< 
 
 
 clean:
