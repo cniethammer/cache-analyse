@@ -260,7 +260,8 @@ int main( int argc, char* argv[] ){
 #endif
   fprintf(stdout,"\n" );
 
-  fprintf( stdout, "# Access padding: %ld Bytes\n#\n", NPAD * sizeof(char) );
+  fprintf( stdout, "# Access padding: %ld Bytes\n", NPAD * sizeof(char) );
+  fprintf( stdout, "# Struct size:    %ld Bytes\n#\n", sizeof(list_elem));
 
   fprintf( stdout, "# sequentiall list\n" );
   for( size = wset_start_size; size <= wset_final_size; size *= 2 ) {
