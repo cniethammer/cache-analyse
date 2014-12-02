@@ -2,6 +2,7 @@
 #define TIMER_H
 
 #include "sys/time.h"
+#include <stdlib.h>
 
 inline double timer(){
   struct timeval timer;
