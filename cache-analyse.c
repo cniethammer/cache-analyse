@@ -165,25 +165,22 @@ list_elem * init_random(long int size){
 	if( wsetptr == NULL )
 		return NULL;
 
-	/* initialize the pointer chain */
-	/* set all pointers to 0 so we know later on which elements were already 
-	* used as their pointers will be unequal 0 */
-	for( i = 0; i < (size/sizeof(list_elem)); i++ )
-		wsetptr[i].next = 0;
-
-# define FIRST_ID 0
-	long int id = FIRST_ID;
-
-	for( i = 0; i < (size/sizeof(list_elem) - 1); i++ ){
-		long int nextid;
-		do {
-			nextid = ( random() % (1 + size/sizeof(list_elem)) );
-		} while( wsetptr[nextid].next != 0 );
-		wsetptr[id].next = &wsetptr[nextid];
-		id = nextid;
+	long num_elements = size/sizeof(list_elem);
+	/* Use pointer array to generate a mapper list */
+	for( i = 0; i < num_elements; i++ )
+		wsetptr[i].next = (void *) i;
+	/* Use Fisher–Yates shuffle algorithm to randomize mapping */
+	for( i = num_elements - 1; i > 0; i-- ) {
+		long j = random() % (i + 1);
+		long tmp = (long) wsetptr[i].next;
+		wsetptr[i].next = (void *) wsetptr[j].next;
+		wsetptr[j].next = (void *) tmp;
 	}
-	wsetptr[id].next = &wsetptr[FIRST_ID]; // last element points to the first one
-	
+	for( i = 0; i < num_elements; i++ ) {
+		long id = (long) wsetptr[i].next;
+		wsetptr[i].next = &wsetptr[id];
+	}
+
 	return wsetptr;
 }
 
