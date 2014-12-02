@@ -265,31 +265,30 @@ int main( int argc, char* argv[] ){
 	fprintf(stdout, "# Struct size:    %ld Bytes\n", sizeof(list_elem));
 	fprintf(stdout, "# ------------------------------\n\n" );
 
-	fprintf( stdout, "# sequentiall list\n" );
-	result_head();
-	for( size = wset_start_size; size <= wset_final_size; size *= 2 ) {
-		wsetptr = init_sequential( size );
-		test_read( size, wsetptr );
-		free( wsetptr );
-	}
-	fprintf( stdout, "\n\n" );
+	typedef list_elem* (*init_fct_ptr)(long size);
+	typedef struct {
+		init_fct_ptr function;
+		char *name;
+	} init_fct_spec;
 
-	fprintf( stdout, "# inverse sequentiall list\n" );
-	result_head();
-	for( size = wset_start_size; size <= wset_final_size; size *= 2 ) {
-		wsetptr = init_inverse_sequential( size );
-		test_read( size, wsetptr );
-		free( wsetptr );
-	}
-	fprintf( stdout, "\n\n" );
+	init_fct_spec init_functions[] = {
+		{init_sequential, "sequential"},
+		{init_inverse_sequential, "inverse sequential"},
+		{init_random, "random"}
+	};
 
-	fprintf( stdout, "# random list\n" );
-	result_head();
-	for( size = wset_start_size; size <= wset_final_size; size *= 2 ) {
-		wsetptr = init_random( size );
-		test_read( size, wsetptr );
-		free( wsetptr );
+	int i;
+	for(i = 0; i < sizeof(init_functions)/sizeof(init_functions[0]); i++) {
+		fprintf( stdout, "# %s\n", init_functions[i].name );
+		result_head();
+		for( size = wset_start_size; size <= wset_final_size; size *= 1.1 ) {
+			wsetptr = init_functions[i].function( size );
+			test_read( size, wsetptr );
+			free( wsetptr );
+		}
+		fprintf( stdout, "\n\n" );
 	}
+
 #ifdef PAPI
 	long long dummy[num_hwcntrs];
 	retval = PAPI_stop_counters(dummy, num_hwcntrs);
