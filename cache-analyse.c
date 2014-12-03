@@ -194,7 +194,6 @@ long int test_read(long int size, list_elem *wsetptr) {
 	long int num_accesses = NUM_ACCESS_FACTOR * wset_final_size / sizeof( list_elem * );
 	double start, stop;
 	list_elem *lptr;
-	double exponent;
 	ticks ticks1, ticks2;
 
 	if( wsetptr == NULL )
