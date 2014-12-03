@@ -241,6 +241,10 @@ int main( int argc, char* argv[] ){
 	long int size = 1;
 	list_elem *wsetptr;
 
+	if(argc == 3) {
+		wset_start_size = atol(argv[1]);
+		wset_final_size = atol(argv[2]);
+	}
 #ifdef PAPI
 	int retval;
 	retval = PAPI_library_init(PAPI_VER_CURRENT);
@@ -263,6 +267,8 @@ int main( int argc, char* argv[] ){
 	fprintf(stdout, "# Cache-Analysis\n");
 	fprintf(stdout, "# Access padding: %ld Bytes\n", NPAD * sizeof(char) );
 	fprintf(stdout, "# Struct size:    %ld Bytes\n", sizeof(list_elem));
+	fprintf(stdout, "# wset_start_size:    %ld Bytes\n", wset_start_size);
+	fprintf(stdout, "# wset_final_size:    %ld Bytes\n", wset_final_size);
 	fprintf(stdout, "# ------------------------------\n\n" );
 
 	typedef list_elem* (*init_fct_ptr)(long size);
