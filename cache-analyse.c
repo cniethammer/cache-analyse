@@ -12,6 +12,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
 #ifdef PAPI
 #include <papi.h>
 #endif
@@ -49,6 +51,7 @@ char * EventStrings[3] = {"PAPI_TOT_CYC", "PAPI_L2_DCM", "PAPI_L2_DCA" };
 long int wset_start_size = 1 << 10;	// 1 kB
 long int wset_final_size = 1 << 27;	// 128 MB
 
+FILE *logfile;
 
 /***********************************************************************
  * data type definitions 
@@ -219,21 +222,21 @@ long int test_read(long int size, list_elem *wsetptr) {
 	double etime = stop - start;
 
 #ifdef PAPI
-	fprintf( stdout, "%12.ld %16.2lf %8.1lf", size, num_accesses / etime, (double)(ticks2 - ticks1) / num_accesses );
+	fprintf( logfile, "%12.ld %10.6lf %16.2lf %8.1lf", size, etime, num_accesses / etime, (double)(ticks2 - ticks1) / num_accesses );
 	int ii;
 	for( ii = 0; ii < num_hwcntrs; ii++) {
-		fprintf(stdout, "\t%lld", values1[ii] );
+		fprintf(logfile, "\t%lld", values1[ii] );
 	}
-	fprintf( stdout, "\n" );
+	fprintf( logfile, "\n" );
 #else
-	fprintf( stdout, "%12.ld %16.2lf %8.1lf\n", size, num_accesses / etime, (double)(ticks2 - ticks1) / num_accesses );
+	fprintf( logfile, "%12.ld %10.6lf %16.2lf %8.1lf\n", size, etime, num_accesses / etime, (double)(ticks2 - ticks1) / num_accesses );
 #endif
       
 	return (long) lptr;
 }
 
 void result_head(){
-    fprintf(stdout,"# %10s %16s %8s\n", "size", "access/sec", "ticks/access");
+    fprintf(logfile,"# %10s %10s %16s %8s\n", "size", "etime", "access/sec", "ticks/access");
 }
 
 int main( int argc, char* argv[] ){
@@ -241,6 +244,9 @@ int main( int argc, char* argv[] ){
 	long int size = 1;
 	list_elem *wsetptr;
 	long result = 0;
+	char logfilename[256];
+	snprintf(logfilename, 255, "%s-pad%d.log", argv[0], NPAD);
+	logfile = fopen(logfilename, "w+");
 
 	if(argc == 3) {
 		wset_start_size = atol(argv[1]);
@@ -260,17 +266,19 @@ int main( int argc, char* argv[] ){
 	}
 	int j;
 	for( j = 0; j < num_hwcntrs; j++ ) {
-		fprintf(stdout,"\t%s", EventStrings[j]);
+		fprintf(logfile,"\t%s", EventStrings[j]);
 	}
 #endif /* PAPI */
 
-	fprintf(stdout, "# ------------------------------\n" );
-	fprintf(stdout, "# Cache-Analysis\n");
-	fprintf(stdout, "# Access padding: %ld Bytes\n", NPAD * sizeof(char) );
-	fprintf(stdout, "# Struct size:    %ld Bytes\n", sizeof(list_elem));
-	fprintf(stdout, "# wset_start_size:    %ld Bytes\n", wset_start_size);
-	fprintf(stdout, "# wset_final_size:    %ld Bytes\n", wset_final_size);
-	fprintf(stdout, "# ------------------------------\n\n" );
+	fprintf(logfile, "# ------------------------------\n" );
+	fprintf(logfile, "# Cache-Analysis\n");
+	fprintf(logfile, "# Logfilename:    %s\n", logfilename);
+	fprintf(logfile, "# Access padding: %ld Bytes\n", NPAD * sizeof(char) );
+	fprintf(logfile, "# Struct size:    %ld Bytes\n", sizeof(list_elem));
+	fprintf(logfile, "# wset_start_size:    %ld Bytes\n", wset_start_size);
+	fprintf(logfile, "# wset_final_size:    %ld Bytes\n", wset_final_size);
+	fprintf(logfile, "# # accesses:     %ld\n", NUM_ACCESS_FACTOR * wset_final_size / sizeof( list_elem * ));
+	fprintf(logfile, "# ------------------------------\n\n" );
 
 	typedef list_elem* (*init_fct_ptr)(long size);
 	typedef struct {
@@ -286,14 +294,16 @@ int main( int argc, char* argv[] ){
 
 	int i;
 	for(i = 0; i < sizeof(init_functions)/sizeof(init_functions[0]); i++) {
-		fprintf( stdout, "# %s\n", init_functions[i].name );
+		fprintf( logfile, "# %s\n", init_functions[i].name );
 		result_head();
 		for( size = wset_start_size; size <= wset_final_size; size *= 1.1 ) {
 			wsetptr = init_functions[i].function( size );
 			result += test_read( size, wsetptr );
 			free( wsetptr );
 		}
-		fprintf( stdout , "# Result: %ld\n\n", result );
+		fprintf( logfile, "# Result: %ld\n\n", result );
+		time_t ltime = time(NULL); /* calendar time */
+		fprintf( logfile, "# Endtime: %s\n\n", asctime( localtime(&ltime) ) );
 	}
 
 #ifdef PAPI
