@@ -1,5 +1,5 @@
-CC     = gcc
-CFLAGS = -O2
+CC      = gcc
+CFLAGS  = -O2
 LDFLAGS = -O2 -lm
 
 ifdef PAPI
@@ -8,22 +8,17 @@ ifdef PAPI
 endif
 
 ifndef NPAD
-  NPAD = 7 
+  NPAD = 0
 endif
 
 CFLAGS+= -DNPAD=$(NPAD)
 
 .PHONY: default clean cleanall
 
-default: run
+default: cache-analyse
 
-run: cache-analyse-$(NPAD)
+run: cache-analyse
 	./$<
-
-cache-analyse-$(NPAD): cleanall cache-analyse
-	cp cache-analyse cache-analyse-$(NPAD)
-
-  
 
 
 clean:
