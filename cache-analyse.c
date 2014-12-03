@@ -50,6 +50,7 @@ char * EventStrings[3] = {"PAPI_TOT_CYC", "PAPI_L2_DCM", "PAPI_L2_DCA" };
 /* working set minimum and maximum size */
 long int wset_start_size = 1 << 3;	// 8 B
 long int wset_final_size = 1 << 27;	// 128 MB
+double factor = 1.05;
 
 FILE *logfile;
 
@@ -296,10 +297,11 @@ int main( int argc, char* argv[] ){
 	for(i = 0; i < sizeof(init_functions)/sizeof(init_functions[0]); i++) {
 		fprintf( logfile, "# %s\n", init_functions[i].name );
 		result_head();
-		for( size = wset_start_size; size <= wset_final_size; size *= 1.1 ) {
+		for( size = wset_start_size; size <= wset_final_size; ) {
 			wsetptr = init_functions[i].function( size );
 			result += test_read( size, wsetptr );
 			free( wsetptr );
+			size = (size + sizeof(list_elem) > size * factor) ? size + sizeof(list_elem) : size * factor;
 		}
 		fprintf( logfile, "# Result: %ld\n\n", result );
 		time_t ltime = time(NULL); /* calendar time */
