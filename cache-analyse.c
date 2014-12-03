@@ -240,6 +240,7 @@ int main( int argc, char* argv[] ){
 
 	long int size = 1;
 	list_elem *wsetptr;
+	long result = 0;
 
 	if(argc == 3) {
 		wset_start_size = atol(argv[1]);
@@ -289,10 +290,10 @@ int main( int argc, char* argv[] ){
 		result_head();
 		for( size = wset_start_size; size <= wset_final_size; size *= 1.1 ) {
 			wsetptr = init_functions[i].function( size );
-			test_read( size, wsetptr );
+			result += test_read( size, wsetptr );
 			free( wsetptr );
 		}
-		fprintf( stdout, "\n\n" );
+		fprintf( stdout , "# Result: %ld\n\n", result );
 	}
 
 #ifdef PAPI
