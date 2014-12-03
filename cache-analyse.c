@@ -48,7 +48,7 @@ char * EventStrings[3] = {"PAPI_TOT_CYC", "PAPI_L2_DCM", "PAPI_L2_DCA" };
 #endif
 
 /* working set minimum and maximum size */
-long int wset_start_size = 1 << 10;	// 1 kB
+long int wset_start_size = 1 << 3;	// 8 B
 long int wset_final_size = 1 << 27;	// 128 MB
 
 FILE *logfile;
