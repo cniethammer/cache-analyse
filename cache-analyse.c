@@ -62,6 +62,10 @@ typedef struct l list_elem;
 /* working set minimum and maximum size */
 long int wset_start_size = sizeof(list_elem);	// minimum is size of list_elem
 long int wset_final_size = 1 << 27;	// 128 MB
+
+#ifndef SMALL_ARRAY_LIMIT
+#define SMALL_ARRAY_LIMIT (1024)
+#endif
 double factor = 1.05;
 
 FILE *logfile;
@@ -311,7 +315,13 @@ int main( int argc, char* argv[] ){
 			wsetptr = init_functions[i].function( size );
 			result += test_read( size, wsetptr );
 			free( wsetptr );
-			size = (size + sizeof(list_elem) > size * factor) ? size + sizeof(list_elem) : size * factor;
+			if(size < SMALL_ARRAY_LIMIT) {
+				size += sizeof(list_elem);
+			}
+			else {
+				size *= factor;
+			}
+			//size = (size + sizeof(list_elem) > size * factor) ? size + sizeof(list_elem) : size * factor;
 		}
 		fprintf( logfile, "# Result: %ld\n", result );
 		time_t endtime = time(NULL); /* calendar time */
