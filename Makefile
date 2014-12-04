@@ -2,6 +2,10 @@ CC      = gcc
 CFLAGS  = -O2 -Wall -Wunused
 LDFLAGS = -O2 -lm
 
+ifdef DEBUG
+  CFLAGS += " -g"
+  LDFLAGS += " -g"
+endif
 ifdef PAPI
   CFLAGS += " -DPAPI"
   LDFLAGS += " -lpapi"
