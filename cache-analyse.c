@@ -31,7 +31,19 @@ char * EventStrings[3] = {"PAPI_TOT_CYC", "PAPI_L2_DCM", "PAPI_L2_DCA" };
 #endif
 #endif /* PAPI */
 
-/* definitions and default values */
+/***********************************************************************
+ * data type definitions
+ ***********************************************************************/
+/** data element */
+struct l {
+  struct l *next; /**< pointer to next data element */
+  char pad[NPAD]; /**< padding */
+};
+typedef struct l list_elem;
+
+/***********************************************************************
+ * definitions and default values
+ ***********************************************************************/
 /* size of the allocated memory region used to clear CPU caches */
 #ifndef CLEAR_CACHE_BLOCK_SIZE
 #define CLEAR_CACHE_BLOCK_SIZE 16*1024*1024	// 16 MB
@@ -48,20 +60,11 @@ char * EventStrings[3] = {"PAPI_TOT_CYC", "PAPI_L2_DCM", "PAPI_L2_DCA" };
 #endif
 
 /* working set minimum and maximum size */
-long int wset_start_size = 1 << 3;	// 8 B
+long int wset_start_size = sizeof(list_elem);	// minimum is size of list_elem
 long int wset_final_size = 1 << 27;	// 128 MB
 double factor = 1.05;
 
 FILE *logfile;
-
-/***********************************************************************
- * data type definitions 
- ***********************************************************************/
-/** data element */
-typedef struct l {
-  struct l *next; /**< pointer to next data element */
-  char pad[NPAD]; /**< padding */
-} list_elem;
 
 /***********************************************************************
  * function definitions
