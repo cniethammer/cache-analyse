@@ -132,7 +132,9 @@ list_elem * init_sequential(long int size){
 	if( wsetptr == NULL )
 		return NULL;
 	/* initialize the linear pointer chain */
-	for( i = 0; i < size / sizeof(struct l) - 1; i++ )
+	long num_elem = size / sizeof(list_elem);
+
+	for( i = 0; i < num_elem - 1; i++ )
 		wsetptr[i].next = &wsetptr[i+1];
 	wsetptr[i].next = &wsetptr[0]; // last element points to the first one
 	
