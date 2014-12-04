@@ -234,6 +234,7 @@ long int test_read(long int size, list_elem *wsetptr) {
 #else
 	fprintf( logfile, "%12.ld %10.6lf %16.2lf %8.1lf\n", size, etime, num_accesses / etime, (double)(ticks2 - ticks1) / num_accesses );
 #endif
+	fflush(logfile);
       
 	return (long) lptr;
 }
@@ -282,6 +283,7 @@ int main( int argc, char* argv[] ){
 	fprintf(logfile, "# wset_final_size:    %ld Bytes\n", wset_final_size);
 	fprintf(logfile, "# # accesses:     %ld\n", NUM_ACCESS_FACTOR * wset_final_size / sizeof( list_elem * ));
 	fprintf(logfile, "# ------------------------------\n\n" );
+	fflush (logfile);
 
 	typedef list_elem* (*init_fct_ptr)(long size);
 	typedef struct {
