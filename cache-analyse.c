@@ -253,6 +253,9 @@ int main( int argc, char* argv[] ){
 	snprintf(logfilename, 255, "%s-pad%d.log", argv[0], NPAD);
 	logfile = fopen(logfilename, "w+");
 
+	if(argc == 2) {
+		wset_final_size = atol(argv[1]);
+	}
 	if(argc == 3) {
 		wset_start_size = atol(argv[1]);
 		wset_final_size = atol(argv[2]);
