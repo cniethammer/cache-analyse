@@ -289,7 +289,7 @@ int main( int argc, char* argv[] ){
 	fprintf(logfile, "# ------------------------------\n\n" );
 	fflush (logfile);
 
-	typedef list_elem* (*init_fct_ptr)(long size);
+	typedef list_elem* (*init_fct_ptr)(long);
 	typedef struct {
 		init_fct_ptr function;
 		char *name;
