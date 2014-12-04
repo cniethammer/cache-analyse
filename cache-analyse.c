@@ -246,7 +246,7 @@ void result_head(){
 
 int main( int argc, char* argv[] ){
 
-	long int size = 1;
+	long size;
 	list_elem *wsetptr;
 	long result = 0;
 	char logfilename[256];
