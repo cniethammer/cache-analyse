@@ -294,6 +294,8 @@ int main( int argc, char* argv[] ){
 
 	int i;
 	for(i = 0; i < sizeof(init_functions)/sizeof(init_functions[0]); i++) {
+		time_t starttime = time(NULL); /* calendar time */
+		fprintf( logfile, "# Starttime: %s", asctime( localtime(&starttime) ) );
 		fprintf( logfile, "# %s\n", init_functions[i].name );
 		result_head();
 		for( size = wset_start_size; size <= wset_final_size; ) {
@@ -302,9 +304,10 @@ int main( int argc, char* argv[] ){
 			free( wsetptr );
 			size = (size + sizeof(list_elem) > size * factor) ? size + sizeof(list_elem) : size * factor;
 		}
-		fprintf( logfile, "# Result: %ld\n\n", result );
-		time_t ltime = time(NULL); /* calendar time */
-		fprintf( logfile, "# Endtime: %s\n\n", asctime( localtime(&ltime) ) );
+		fprintf( logfile, "# Result: %ld\n", result );
+		time_t endtime = time(NULL); /* calendar time */
+		fprintf( logfile, "# Endtime: %s", asctime( localtime(&endtime) ) );
+		fprintf( logfile, "# Duration: %lf sec\n\n\n", difftime(endtime, starttime) );
 	}
 
 #ifdef PAPI
