@@ -14,6 +14,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
+
 #ifdef PAPI
 #include <papi.h>
 #endif
@@ -250,6 +252,7 @@ void result_head(){
 
 int main( int argc, char* argv[] ){
 
+	int i;
 	long size;
 	list_elem *wsetptr;
 	long result = 0;
@@ -257,13 +260,68 @@ int main( int argc, char* argv[] ){
 	snprintf(logfilename, 255, "%s-pad%d.log", argv[0], NPAD);
 	logfile = fopen(logfilename, "w+");
 
-	if(argc == 2) {
-		wset_final_size = atol(argv[1]);
+	typedef list_elem* (*init_fct_ptr)(long);
+	typedef struct {
+		init_fct_ptr function;
+		char *name;
+		int execute;
+	} init_fct_spec;
+
+	init_fct_spec init_functions[] = {
+		{init_sequential, "sequential", 1},
+		{init_inverse_sequential, "inverse sequential", 1},
+		{init_random, "random", 1}
+	};
+
+	const char optstring[] = "hm:M:p:";
+
+	char opt;
+	char pattern[1024];
+	char *ptr;
+	char delimiter[] = ",";
+
+	while ((opt = getopt(argc, argv, optstring)) != -1) {
+		switch(opt) {
+			case 'm':
+				wset_start_size = atol(optarg);
+				break;
+			case 'M':
+				wset_final_size = atol(optarg);
+				break;
+			case 'p':
+				for(i = 0; i < sizeof(init_functions)/sizeof(init_functions[0]); i++) {
+					init_functions[i].execute = 0;
+				}
+				strcpy(pattern, optarg);
+				ptr = strtok(pattern, delimiter);
+				while(ptr != NULL) {
+					if(strcmp(ptr, "all") == 0) {
+						for(i = 0; i < sizeof(init_functions)/sizeof(init_functions[0]); i++) {
+							init_functions[i].execute = 1;
+						}
+					}
+					else {
+						for(i = 0; i < sizeof(init_functions)/sizeof(init_functions[0]); i++) {
+							if(strcmp(ptr, init_functions[i].name) == 0) {
+								init_functions[i].execute = 1;
+							}
+						}
+					}
+					ptr = strtok(NULL, delimiter);
+				}
+				break;
+			case 'h':
+			default:
+				fprintf(stderr, "Usage: %s [-m min] [-M max] [-p pattern]\n", argv[0]);
+				fprintf(stderr, "Available memory traversal patterns:\n");
+				for(i = 0; i < sizeof(init_functions)/sizeof(init_functions[0]); i++) {
+					fprintf(stderr, "* %s\n", init_functions[i].name);
+				}
+				exit(1);
+				break;
+		}
 	}
-	if(argc == 3) {
-		wset_start_size = atol(argv[1]);
-		wset_final_size = atol(argv[2]);
-	}
+
 #ifdef PAPI
 	int retval;
 	retval = PAPI_library_init(PAPI_VER_CURRENT);
@@ -293,20 +351,10 @@ int main( int argc, char* argv[] ){
 	fprintf(logfile, "# ------------------------------\n\n" );
 	fflush (logfile);
 
-	typedef list_elem* (*init_fct_ptr)(long);
-	typedef struct {
-		init_fct_ptr function;
-		char *name;
-	} init_fct_spec;
-
-	init_fct_spec init_functions[] = {
-		{init_sequential, "sequential"},
-		{init_inverse_sequential, "inverse sequential"},
-		{init_random, "random"}
-	};
-
-	int i;
 	for(i = 0; i < sizeof(init_functions)/sizeof(init_functions[0]); i++) {
+		if(init_functions[i].execute == 0) {
+			continue;
+		}
 		time_t starttime = time(NULL); /* calendar time */
 		fprintf( logfile, "# Starttime: %s", asctime( localtime(&starttime) ) );
 		fprintf( logfile, "# %s\n", init_functions[i].name );
