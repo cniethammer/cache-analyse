@@ -64,6 +64,8 @@ typedef struct l list_elem;
 /* working set minimum and maximum size */
 long int wset_start_size = sizeof(list_elem);	// minimum is size of list_elem
 long int wset_final_size = 1 << 27;	// 128 MB
+long int wset_stride = 1; // stride between elements in array to be considered
+                          // For stride 2  elements 0, 2, 4, 6, ... will be used for access
 
 #ifndef SMALL_ARRAY_LIMIT
 #define SMALL_ARRAY_LIMIT (1024)
@@ -164,6 +166,47 @@ list_elem * init_inverse_sequential(long int size){
 		wsetptr[i].next = &wsetptr[i-1];
 	wsetptr[0].next = &wsetptr[i-1]; // first element points to the last one
 	
+	return wsetptr;
+}
+
+/**
+ * Allocate an array of 'list_elem'ents with at least size size Byte.
+ * The list elements are connected in a random round robing way where
+ * only elements with index multiple of stride are connected.
+ * @return pointer to the begin of array, NULL in case of an error
+ */
+list_elem * init_random_stride(long int size){
+	long int i;
+	list_elem *wsetptr;
+
+	wsetptr = (list_elem *) malloc( size + sizeof(list_elem ) );
+	if( wsetptr == NULL )
+		return NULL;
+
+	long num_elements = size/sizeof(list_elem);
+	/* Use pointer array to generate a mapper list */
+	for( i = 0; i < num_elements; i++ )
+		wsetptr[i].next = (void *) i;
+	/* Use Fisher–Yates shuffle algorithm to randomize mapping but consider only every 'stride' element
+	 * starting with element 0.
+	 * e.g. stride = 4:
+	 * 0 1 2 3 4 5 6 7 8 9 10 11 12 13
+	 * 0       4       8         12
+	 * 8       12      4         0
+	 */
+	for( i = ((num_elements - 1) / wset_stride) ; i > 0; i-- ) {
+		long j =  (random() % (i + 1));
+		long ii = wset_stride * i;
+		long jj = wset_stride * j;
+		long tmp = (long) wsetptr[ii].next;
+		wsetptr[ii].next = (void *) wsetptr[jj].next;
+		wsetptr[jj].next = (void *) tmp;
+	}
+	for( i = 0; i < num_elements; i+= wset_stride ) {
+		long id = (long) wsetptr[i].next;
+		wsetptr[i].next = &wsetptr[id];
+	}
+
 	return wsetptr;
 }
 
@@ -270,10 +313,11 @@ int main( int argc, char* argv[] ){
 	init_fct_spec init_functions[] = {
 		{init_sequential, "sequential", 1},
 		{init_inverse_sequential, "inverse sequential", 1},
-		{init_random, "random", 1}
+		{init_random, "random", 1},
+		{init_random_stride, "random_stride", 1}
 	};
 
-	const char optstring[] = "hm:M:p:";
+	const char optstring[] = "hm:M:p:s:";
 
 	char opt;
 	char pattern[1024];
@@ -310,9 +354,12 @@ int main( int argc, char* argv[] ){
 					ptr = strtok(NULL, delimiter);
 				}
 				break;
+			case 's':
+				wset_stride = atol(optarg);
+				break;
 			case 'h':
 			default:
-				fprintf(stderr, "Usage: %s [-m min] [-M max] [-p pattern]\n", argv[0]);
+				fprintf(stderr, "Usage: %s [-m min] [-M max] [-p pattern] [-s stride]\n", argv[0]);
 				fprintf(stderr, "Available memory traversal patterns:\n");
 				for(i = 0; i < sizeof(init_functions)/sizeof(init_functions[0]); i++) {
 					fprintf(stderr, "* %s\n", init_functions[i].name);
@@ -320,6 +367,11 @@ int main( int argc, char* argv[] ){
 				exit(1);
 				break;
 		}
+	}
+
+	if(wset_start_size < wset_stride) {
+		fprintf(stderr, "ERROR: Stride has to be larger than the minumum size. (stride=%ld, min_size=%ld)\n", wset_stride, wset_start_size);
+		exit(1);
 	}
 
 #ifdef PAPI
@@ -347,6 +399,7 @@ int main( int argc, char* argv[] ){
 	fprintf(logfile, "# Struct size:    %ld Bytes\n", sizeof(list_elem));
 	fprintf(logfile, "# wset_start_size:    %ld Bytes\n", wset_start_size);
 	fprintf(logfile, "# wset_final_size:    %ld Bytes\n", wset_final_size);
+	fprintf(logfile, "# wset_stride:    %ld elements\n", wset_stride);
 	fprintf(logfile, "# # accesses:     %ld\n", NUM_ACCESS_FACTOR * wset_final_size / sizeof( list_elem * ));
 	fprintf(logfile, "# ------------------------------\n\n" );
 	fflush (logfile);
