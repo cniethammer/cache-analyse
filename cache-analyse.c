@@ -175,7 +175,7 @@ list_elem * init_inverse_sequential(long int size){
  * only elements with index multiple of stride are connected.
  * @return pointer to the begin of array, NULL in case of an error
  */
-list_elem * init_random_stride(long int size){
+list_elem * init_random(long int size){
 	long int i;
 	list_elem *wsetptr;
 
@@ -203,38 +203,6 @@ list_elem * init_random_stride(long int size){
 		wsetptr[jj].next = (void *) tmp;
 	}
 	for( i = 0; i < num_elements; i+= wset_stride ) {
-		long id = (long) wsetptr[i].next;
-		wsetptr[i].next = &wsetptr[id];
-	}
-
-	return wsetptr;
-}
-
-/**
- * Allocate an array of 'list_elem'ents with at least size size Byte.
- * The list elements are connected in a random round robing way.
- * @return pointer to the begin of array, NULL in case of an error
- */
-list_elem * init_random(long int size){
-	long int i;
-	list_elem *wsetptr;
-
-	wsetptr = (list_elem *) malloc( size + sizeof(list_elem ) );
-	if( wsetptr == NULL )
-		return NULL;
-
-	long num_elements = size/sizeof(list_elem);
-	/* Use pointer array to generate a mapper list */
-	for( i = 0; i < num_elements; i++ )
-		wsetptr[i].next = (void *) i;
-	/* Use Fisher–Yates shuffle algorithm to randomize mapping */
-	for( i = num_elements - 1; i > 0; i-- ) {
-		long j = random() % (i + 1);
-		long tmp = (long) wsetptr[i].next;
-		wsetptr[i].next = (void *) wsetptr[j].next;
-		wsetptr[j].next = (void *) tmp;
-	}
-	for( i = 0; i < num_elements; i++ ) {
 		long id = (long) wsetptr[i].next;
 		wsetptr[i].next = &wsetptr[id];
 	}
@@ -312,9 +280,8 @@ int main( int argc, char* argv[] ){
 
 	init_fct_spec init_functions[] = {
 		{init_sequential, "sequential", 1},
-		{init_inverse_sequential, "inverse sequential", 1},
-		{init_random, "random", 1},
-		{init_random_stride, "random_stride", 1}
+		{init_inverse_sequential, "inverse-sequential", 1},
+		{init_random, "random", 1}
 	};
 
 	const char optstring[] = "hm:M:p:s:";
