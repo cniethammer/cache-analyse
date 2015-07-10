@@ -142,8 +142,8 @@ list_elem * init_sequential(long int size){
 	/* initialize the linear pointer chain */
 	long num_elem = size / sizeof(list_elem);
 
-	for( i = 0; i < num_elem - 1; i++ )
-		wsetptr[i].next = &wsetptr[i+1];
+	for( i = 0; i < num_elem - wset_stride; i += wset_stride )
+		wsetptr[i].next = &wsetptr[i+wset_stride];
 	wsetptr[i].next = &wsetptr[0]; // last element points to the first one
 	
 	return wsetptr;
@@ -162,9 +162,9 @@ list_elem * init_inverse_sequential(long int size){
 	if( wsetptr == NULL )
 		return NULL;
 	/* initialize the linear pointer chain */
-	for( i = 1; i < size / sizeof(struct l); i++ )
-		wsetptr[i].next = &wsetptr[i-1];
-	wsetptr[0].next = &wsetptr[i-1]; // first element points to the last one
+	for( i = wset_stride; i < size / sizeof(list_elem); i+=wset_stride )
+		wsetptr[i].next = &wsetptr[i-wset_stride];
+	wsetptr[0].next = &wsetptr[i-wset_stride]; // first element points to the last one
 	
 	return wsetptr;
 }
