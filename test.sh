@@ -1,12 +1,15 @@
 #!/bin/bash
 
-npads="0 1 3 7 15 31 63 127"
-CC=gcc
+npads="0 8 16 24 32 40 56 120"
+#npads="0 8 16 24 32 40 56 120 128 248 256"
 
-for npad in ${npads}
+for pad in ${npads}
 do
-	echo ${npad}
-	echo "${CC} -lm -DNPAD=${npad} -o cache-analyse_npad-${npad} cache-analyse.c"
-	${CC} -lm cache-analyse.c -DNPAD=${npad} -o cache-analyse_npad-${npad}
-	./cache-analyse_npad-${npad} > cache-analyse_npad-${npad}.log
+	echo -n "Padding: ${pad} ... "
+    START=$(date +%s.%N)
+	make -B NPAD=${pad} cache-analyse > /dev/null
+	./cache-analyse
+    END=$(date +%s.%N)
+    DIFF=$(echo "$END - $START" | bc)
+    echo "took $DIFF"
 done
